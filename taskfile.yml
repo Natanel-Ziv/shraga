@@ -1,0 +1,39 @@
+version: '3'
+
+tasks:
+  build:
+    desc: "Build the application binary"
+    cmds:
+      - go build -o bin/monitoring-app ./cmd
+
+  lint:
+    desc: "Run linter checks"
+    cmds:
+      - go fmt ./...
+      - go vet ./...
+
+  run:
+    desc: "Run the application"
+    cmds:
+      - docker-compose up -d
+      - go run ./cmd/main.go
+  
+  migrate:
+    cmds:
+      - docker-compose up -d db
+      - sleep 10  # Wait for PostgreSQL to initialize
+      - go run ./cmd/main.go migrate
+
+  stop:
+    cmds:
+      - docker-compose down
+
+  test:
+    desc: "Run tests"
+    cmds:
+      - go test ./...
+
+  clean:
+    desc: "Clean up the build"
+    cmds:
+      - rm -rf bin/monitoring-app
