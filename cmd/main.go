@@ -8,12 +8,13 @@ import (
 	"shraga/internal/db"
 	"shraga/internal/logging"
 	"shraga/internal/monitor/manager"
+	"syscall"
 
 	"github.com/samber/lo"
 )
 
 func main() {
-	ctx, cancelCtx := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	ctx, cancelCtx := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancelCtx()
 
 	cfg := config.LoadConfig()

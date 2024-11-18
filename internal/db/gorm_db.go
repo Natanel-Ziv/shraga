@@ -76,38 +76,47 @@ func (db *GormDb) GetMonitorsToRun(ctx context.Context) ([]monitor.Monitorer, er
 	var results []monitor.Monitorer
 
 	var monitors []monitor.HttpMonitor
-	if err := db.WithContext(ctx).Where("enabled = true AND is_monitoring = false AND last_monitor_time + make_interval(secs => interval) <= ?", now()).Find(&monitors).Error; err != nil {
+	if err := db.WithContext(ctx).Where("enabled = true AND is_monitoring = false").Find(&monitors).Error; err != nil {
 		return nil, err
 	}
 
-	results = lo.Map(monitors, func(item monitor.HttpMonitor, _ int) monitor.Monitorer {
-		return &item
-	})
+	nowTime := now()
+	for _, mon := range monitors {
+		if mon.LastMonitorTime.Add(mon.Interval).Before(nowTime) {
+			results = append(results, &mon)
+		}
+	}
 
 	return results, nil
 }
 
 func (db *GormDb) Lock(ctx context.Context, mon monitor.Monitorer) error {
-	err := db.WithContext(ctx).
+	result := db.WithContext(ctx).
 		Model(mon).
 		Where("id = ?", mon.GetBase().ID).
-		Update("is_monitoring", true).Error
-	if err != nil {
-		return err
+		Update("is_monitoring", true)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("monitor with ID %d not found", mon.GetBase().ID)
 	}
 	return nil
 }
 
 func (db *GormDb) Unlock(ctx context.Context, mon monitor.Monitorer) error {
-	err := db.WithContext(ctx).
+	result := db.WithContext(ctx).
 		Model(mon).
 		Where("id = ?", mon.GetBase().ID).
 		Updates(map[string]any{
 			"is_monitoring":     false,
 			"last_monitor_time": now(),
-		}).Error
-	if err != nil {
-		return err
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("monitor with ID %d not found", mon.GetBase().ID)
 	}
 	return nil
 }

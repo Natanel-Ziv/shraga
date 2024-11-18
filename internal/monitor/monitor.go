@@ -27,6 +27,7 @@ const (
 	ResultWarn
 )
 
+//go:generate mockery --name MonitorResponser --output ./mock --outpkg mock
 type MonitorResponser interface {
 	GetBaseMonitorResponse() *BaseMonitorResponse
 }
@@ -39,6 +40,7 @@ type BaseMonitorResponse struct {
 	ErrorMsg     string
 }
 
+//go:generate mockery --name Monitorer --output ./mock --outpkg mock
 type Monitorer interface {
 	Monitor(context.Context) MonitorResponser
 	IsEnabled() bool

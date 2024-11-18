@@ -52,7 +52,7 @@ func (m *Manager) startWorkerPool(ctx context.Context) {
 					}
 				}
 			}
-		}(i)
+		}(i)	
 	}
 }
 
